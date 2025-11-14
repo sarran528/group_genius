@@ -2,6 +2,7 @@ package com.groupgenius.groupgenius_backend.config;
 
 import com.groupgenius.groupgenius_backend.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -19,6 +20,8 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -26,6 +29,9 @@ import java.util.Arrays;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @Value("${app.frontend.url:http://localhost:3000}")
+    private String frontendUrl;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -40,7 +46,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/courses/**").permitAll()
                         .requestMatchers("/api/files/**").permitAll()
                         .requestMatchers("/error").permitAll()
-                        // Allow SockJS/websocket endpoints to be accessed without JWT for handshake/info
+                        // Allow SockJS/websocket endpoints to be accessed without JWT for
+                        // handshake/info
                         .requestMatchers("/ws-chat/**").permitAll()
 
                         // User course management endpoints - require authentication
@@ -49,8 +56,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/notifications/**").authenticated()
 
                         // Any other request - require authentication
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -59,19 +65,26 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList(
-                "http://localhost:3000",
-                "http://localhost:5173",
-                "http://localhost:8080"
-        ));
+
+        // Create list of allowed origins including environment variable
+        List<String> allowedOrigins = new ArrayList<>();
+        allowedOrigins.add("http://localhost:3000");
+        allowedOrigins.add("http://localhost:5173");
+        allowedOrigins.add("http://localhost:8080");
+
+        // Add production frontend URL from environment variable
+        if (frontendUrl != null && !frontendUrl.startsWith("http://localhost")) {
+            allowedOrigins.add(frontendUrl);
+        }
+
+        configuration.setAllowedOriginPatterns(allowedOrigins);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList(
                 "Authorization",
                 "Content-Type",
                 "Accept",
                 "X-Requested-With",
-                "Cache-Control"
-        ));
+                "Cache-Control"));
         configuration.setExposedHeaders(Arrays.asList("Authorization"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
