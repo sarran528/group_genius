@@ -55,6 +55,16 @@ const monthNames = [
 
 const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+const DEFAULT_CALENDAR_REFRESH_INTERVAL_MS = 30_000;
+
+const CALENDAR_REFRESH_INTERVAL_MS = (() => {
+  const raw = import.meta.env.VITE_CALENDAR_REFRESH_INTERVAL_MS;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0
+    ? parsed
+    : DEFAULT_CALENDAR_REFRESH_INTERVAL_MS;
+})();
+
 export default function Calendar() {
   const [selectedDate, setSelectedDate] = useState(currentDate);
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
@@ -290,12 +300,12 @@ export default function Calendar() {
     localStorage.setItem(`stickyNoteAssignments_${user.id}`, JSON.stringify(noteAssignments));
   }, [noteAssignments, user]);
 
-  // Auto-refresh sessions every 30 seconds to show newly created sessions by other users
+  // Auto-refresh sessions periodically to show newly created sessions by other users
   useEffect(() => {
     if (!user) return;
     const interval = setInterval(() => {
       loadSessions();
-    }, 30000); // 30 seconds
+    }, CALENDAR_REFRESH_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [user]);
 

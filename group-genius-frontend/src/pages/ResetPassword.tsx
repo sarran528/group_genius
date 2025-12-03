@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { ArrowLeft, Lock, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
+const LOGIN_REDIRECT_DELAY_MS = 3 * 1000;
+
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -168,10 +170,10 @@ export default function ResetPassword() {
         description: "Your password has been updated. You can now log in with your new password.",
       });
 
-      // Redirect to login after 3 seconds
+      // Redirect to login after configured delay
       setTimeout(() => {
         navigate('/login');
-      }, 3000);
+      }, LOGIN_REDIRECT_DELAY_MS);
 
     } catch (error: any) {
       console.error('❌ Reset password error:', error);

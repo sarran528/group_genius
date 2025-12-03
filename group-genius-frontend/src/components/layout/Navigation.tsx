@@ -18,6 +18,16 @@ import { NotificationViewer } from '@/components/common/NotificationViewer';
 import { notificationAPI } from '@/lib/api/notificationApi';
 import { resolveMediaUrl } from '@/lib/media';
 
+const DEFAULT_NOTIFICATION_POLL_INTERVAL_MS = 30_000;
+
+const NOTIFICATION_POLL_INTERVAL_MS = (() => {
+  const raw = import.meta.env.VITE_NOTIFICATION_POLL_INTERVAL_MS;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0
+    ? parsed
+    : DEFAULT_NOTIFICATION_POLL_INTERVAL_MS;
+})();
+
 const navigationItems = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Courses', href: '/courses', icon: BookOpen },
@@ -40,7 +50,10 @@ export function Navigation() {
     if (user?.id) {
       loadUnreadCount();
       // Poll for new notifications every 30 seconds
-      const interval = setInterval(loadUnreadCount, 30000);
+      const interval = setInterval(
+        loadUnreadCount,
+        NOTIFICATION_POLL_INTERVAL_MS
+      );
       return () => clearInterval(interval);
     }
   }, [user?.id]);

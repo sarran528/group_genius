@@ -7,6 +7,8 @@ import MessageList from "./MessageList";
 const WS_URL = (import.meta?.env?.VITE_WS_URL)
   || `${import.meta?.env?.VITE_API_BASE_URL ?? "http://localhost:8080"}/ws-chat`;
 
+const TYPING_INDICATOR_TIMEOUT_MS = 3 * 1000;
+
 const ChatContainer = forwardRef(({ groupId, username, userId, initialMessages = [], onConnectionChange }, ref) => {
   const [messages, setMessages] = useState([]);
   const [connected, setConnected] = useState(false);
@@ -238,14 +240,14 @@ const ChatContainer = forwardRef(({ groupId, username, userId, initialMessages =
                   clearTimeout(existing.timeoutId);
                 }
                 
-                // Set new timeout to auto-remove typing indicator after 3 seconds
+                // Set new timeout to auto-remove typing indicator
                 const timeoutId = setTimeout(() => {
                   setTypingUsers((current) => {
                     const updated = new Map(current);
                     updated.delete(typingUserId);
                     return updated;
                   });
-                }, 3000);
+                }, TYPING_INDICATOR_TIMEOUT_MS);
                 
                 newMap.set(typingUserId, { username: typingUsername, timeoutId });
               } else {

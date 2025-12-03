@@ -43,7 +43,7 @@ public class SessionReminderService {
         ONE_HOUR_BEFORE
     }
 
-    @Scheduled(fixedDelayString = "${app.reminders.poll-interval-ms:300000}")
+    @Scheduled(fixedDelayString = "${app.reminders.poll-interval-ms:#{T(java.time.Duration).ofMinutes(5).toMillis()}}")
     @Transactional
     public void dispatchSessionReminders() {
         LocalDateTime now = LocalDateTime.now();
