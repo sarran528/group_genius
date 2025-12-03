@@ -31,6 +31,9 @@ public class SecurityConfig {
     @Value("${app.frontend.url:}")
     private String frontendUrl;
 
+    @Value("${app.allow.dev.origins:true}")
+    private boolean allowDevOrigins;
+
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
@@ -70,9 +73,11 @@ public class SecurityConfig {
         if (frontendUrl != null && !frontendUrl.isBlank()) {
             allowedOrigins.add(frontendUrl);
         }
-        allowedOrigins.addAll(Arrays.asList(
-                "http://localhost:5173",
-                "http://localhost:8080"));
+        if (allowDevOrigins) {
+            allowedOrigins.addAll(Arrays.asList(
+                    "http://localhost:5173",
+                    "http://localhost:8080"));
+        }
 
         configuration.setAllowedOriginPatterns(allowedOrigins);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
