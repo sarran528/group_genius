@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Lock, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { API_BASE_URL } from '@/lib/api/base';
 
 const LOGIN_REDIRECT_DELAY_MS = 3 * 1000;
 
@@ -117,7 +118,7 @@ export default function ResetPassword() {
     try {
       console.log('🔵 Resetting password with token:', token.substring(0, 8) + '...');
       
-      const response = await fetch('http://localhost:8080/api/auth/reset-password', {
+      const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

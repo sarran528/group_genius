@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Mail, Send, CheckCircle, AlertCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { API_BASE_URL } from '@/lib/api/base';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -42,7 +43,7 @@ export default function ForgotPassword() {
     try {
       console.log('🔵 Sending forgot password request for:', email);
       
-      const response = await fetch('http://localhost:8080/api/auth/forgot-password', {
+      const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

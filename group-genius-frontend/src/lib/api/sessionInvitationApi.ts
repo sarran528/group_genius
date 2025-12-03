@@ -1,6 +1,5 @@
 import { tokenService } from '@/services/api';
-
-const API_BASE_URL = 'http://localhost:8080/api';
+import { API_BASE_URL } from '@/lib/api/base';
 
 const buildHeaders = () => {
   const token = tokenService.getToken();

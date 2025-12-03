@@ -1,4 +1,5 @@
-const API_ROOT = (import.meta?.env?.VITE_API_BASE_URL ?? "http://localhost:8080").replace(/\/$/, "");
+import { API_ROOT } from '@/lib/api/base';
+
 const ABSOLUTE_PROTOCOL = /^(?:https?:|data:|blob:)/i;
 
 export const resolveMediaUrl = (path?: string | null): string | null => {

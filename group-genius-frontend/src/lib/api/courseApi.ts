@@ -1,6 +1,5 @@
 import { Course, UserCourse, CoursePeer, CoursePeersResponse } from '@/types/course';
-
-const API_BASE = 'http://localhost:8080/api';
+import { API_BASE_URL } from '@/lib/api/base';
 
 // Helper function to get current user ID from localStorage or context
 const getCurrentUserId = (): number | null => {
@@ -35,7 +34,7 @@ export const courseApi = {
       ...(userId && { userId: userId.toString() })
     });
 
-    const response = await fetch(`${API_BASE}/courses?${params}`);
+    const response = await fetch(`${API_BASE_URL}/courses?${params}`);
     if (!response.ok) {
       throw new Error('Failed to fetch courses');
     }
@@ -58,7 +57,7 @@ export const courseApi = {
       ...(userId && { userId: userId.toString() })
     });
 
-    const response = await fetch(`${API_BASE}/courses/search?${params}`);
+    const response = await fetch(`${API_BASE_URL}/courses/search?${params}`);
     if (!response.ok) {
       throw new Error('Failed to search courses');
     }
@@ -72,7 +71,7 @@ export const courseApi = {
       ...(userId && { userId: userId.toString() })
     });
 
-    const response = await fetch(`${API_BASE}/courses/${id}?${params}`);
+    const response = await fetch(`${API_BASE_URL}/courses/${id}?${params}`);
     if (!response.ok) {
       throw new Error('Failed to fetch course');
     }
@@ -87,7 +86,7 @@ export const courseApi = {
     if (!userId) {
       throw new Error('User not authenticated');
     }
-    const url = `${API_BASE}/user/courses?userId=${userId}`;
+    const url = `${API_BASE_URL}/user/courses?userId=${userId}`;
     console.log('🔍 Fetching from URL:', url);
     const token = localStorage.getItem('token');
     const response = await fetch(url, {
@@ -116,7 +115,7 @@ export const courseApi = {
     }
 
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_BASE}/user/courses/${courseId}/enroll?userId=${userId}`, {
+    const response = await fetch(`${API_BASE_URL}/user/courses/${courseId}/enroll?userId=${userId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -139,7 +138,7 @@ export const courseApi = {
     }
 
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_BASE}/user/courses/${courseId}?userId=${userId}`, {
+    const response = await fetch(`${API_BASE_URL}/user/courses/${courseId}?userId=${userId}`, {
       method: 'DELETE',
       headers: {
         Authorization: token ? `Bearer ${token}` : '',
@@ -160,7 +159,7 @@ export const courseApi = {
     }
 
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_BASE}/user/courses/peers?courseId=${courseId}&userId=${userId}`, {
+    const response = await fetch(`${API_BASE_URL}/user/courses/peers?courseId=${courseId}&userId=${userId}`, {
       headers: {
         Authorization: token ? `Bearer ${token}` : '',
       },
@@ -173,7 +172,7 @@ export const courseApi = {
 
   // Create a new course (admin function)
   async createCourse(course: Omit<Course, 'id' | 'currentEnrollment' | 'enrollmentPercentage' | 'isFull' | 'isEnrolled'>): Promise<Course> {
-    const response = await fetch(`${API_BASE}/courses`, {
+    const response = await fetch(`${API_BASE_URL}/courses`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, Loader2, Users, Calendar, Clock } from 'lucide-react';
 import { sessionInvitationAPI, SessionCreateWithInvitationsRequest } from '@/lib/api/sessionInvitationApi';
 import { useAuth } from '@/contexts/AuthContext';
+import { API_BASE_URL } from '@/lib/api/base';
 
 interface GroupMember {
   groupMemberId: number;
@@ -48,7 +49,7 @@ export default function SessionCreateWithInvitationsDialog({
   const loadGroupMembers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/group-members/group/${groupId}`, {
+      const response = await fetch(`${API_BASE_URL}/group-members/group/${groupId}`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,

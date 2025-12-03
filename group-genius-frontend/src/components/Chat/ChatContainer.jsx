@@ -2,10 +2,11 @@ import React, { useEffect, useState, useRef, forwardRef, useImperativeHandle } f
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 import MessageList from "./MessageList";
+import { API_ROOT } from '@/lib/api/base';
 
 // Resolve WebSocket URL from env, with robust fallbacks
 const WS_URL = (import.meta?.env?.VITE_WS_URL)
-  || `${import.meta?.env?.VITE_API_BASE_URL ?? "http://localhost:8080"}/ws-chat`;
+  || `${API_ROOT}/ws-chat`;
 
 const TYPING_INDICATOR_TIMEOUT_MS = 3 * 1000;
 

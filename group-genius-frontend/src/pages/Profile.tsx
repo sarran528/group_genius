@@ -28,8 +28,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Course } from '@/types/course';
 import { resolveMediaUrl } from '@/lib/media';
-
-const API_BASE_URL = 'http://localhost:8080/api';
+import { API_BASE_URL } from '@/lib/api/base';
 
 // Default study stats
 const defaultStudyStats = {

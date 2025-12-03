@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Mail, Phone, Clock, MessageSquare, Send, HelpCircle, BookOpen, MessageCircle, CheckCircle, Twitter, Facebook, Linkedin } from 'lucide-react';
+import { API_BASE_URL } from '@/lib/api/base';
 
 const Contact = () => {
   const [formData, setFormData] = useState({ name: '', email: '', queryType: '', subject: '', message: '' });
@@ -27,7 +28,7 @@ const Contact = () => {
       fd.append('subject', formData.subject);
       fd.append('message', formData.message);
 
-      const res = await fetch('http://localhost:8080/api/contact', { method: 'POST', body: fd });
+      const res = await fetch(`${API_BASE_URL}/contact`, { method: 'POST', body: fd });
       if (!res.ok) throw new Error('Failed to send message');
 
       setFormData({ name: '', email: '', queryType: '', subject: '', message: '' });

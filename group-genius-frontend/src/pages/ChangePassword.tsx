@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { ArrowLeft, KeyRound, Lock, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
+import { API_BASE_URL } from '@/lib/api/base';
 
 export default function ChangePassword() {
   const [formData, setFormData] = useState({
@@ -121,7 +122,7 @@ export default function ChangePassword() {
         throw new Error('Authentication token not found');
       }
 
-      const response = await fetch('http://localhost:8080/api/auth/change-password', {
+      const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

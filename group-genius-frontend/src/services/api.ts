@@ -1,5 +1,4 @@
-// 🌍 Base URL for all API endpoints
-const API_BASE_URL = 'http://localhost:8080/api';
+import { API_BASE_URL } from '@/lib/api/base';
 
 // ----------------------------- AUTH API -----------------------------
 export const authAPI = {
