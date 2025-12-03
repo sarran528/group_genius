@@ -40,7 +40,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/courses/**").permitAll()
                         .requestMatchers("/api/files/**").permitAll()
                         .requestMatchers("/error").permitAll()
-                        // Allow SockJS/websocket endpoints to be accessed without JWT for handshake/info
+                        // Allow SockJS/websocket endpoints to be accessed without JWT for
+                        // handshake/info
                         .requestMatchers("/ws-chat/**").permitAll()
 
                         // User course management endpoints - require authentication
@@ -49,8 +50,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/notifications/**").authenticated()
 
                         // Any other request - require authentication
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -59,19 +59,23 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList(
-                "http://localhost:3000",
+
+        List<String> allowedOrigins = new ArrayList<>();
+        if (frontendUrl != null && !frontendUrl.isBlank()) {
+            allowedOrigins.add(frontendUrl);
+        }
+        allowedOrigins.addAll(Arrays.asList(
                 "http://localhost:5173",
-                "http://localhost:8080"
-        ));
+                "http://localhost:8080"));
+
+        configuration.setAllowedOriginPatterns(allowedOrigins);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList(
                 "Authorization",
                 "Content-Type",
                 "Accept",
                 "X-Requested-With",
-                "Cache-Control"
-        ));
+                "Cache-Control"));
         configuration.setExposedHeaders(Arrays.asList("Authorization"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);

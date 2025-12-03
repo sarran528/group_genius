@@ -8,6 +8,7 @@ import com.groupgenius.groupgenius_backend.service.AuthService;
 import com.groupgenius.groupgenius_backend.service.PasswordResetService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
@@ -26,6 +27,9 @@ public class AuthController {
 
     private final AuthService authService;
     private final PasswordResetService passwordResetService;
+
+    @Value("${app.frontend.url:http://localhost:3000}")
+    private String frontendUrl;
 
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<LoginResponse> register(
@@ -124,7 +128,7 @@ public class AuthController {
             tokenInfo.put("email", token.getUser().getEmail());
             tokenInfo.put("expiryDate", token.getExpiresAt());
             tokenInfo.put("used", token.getUsed());
-            tokenInfo.put("resetLink", "http://localhost:3000/reset-password?token=" + token.getToken());
+            tokenInfo.put("resetLink", frontendUrl + "/reset-password?token=" + token.getToken());
             return tokenInfo;
         }).toList());
 
