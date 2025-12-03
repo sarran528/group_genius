@@ -18,12 +18,15 @@ export function SessionCreateDialog({ onCreated }: Props) {
   const [open, setOpen] = useState(false);
   const [groups, setGroups] = useState<Array<any>>([]);
   const [loadingGroups, setLoadingGroups] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const [values, setValues] = useState({
     groupId: undefined as number | undefined,
     title: '',
     description: '',
-    start: '', // datetime-local
+    date: '', // YYYY-MM-DD
+    startTime: '', // HH:mm
+    endTime: '', // HH:mm
     durationDays: 1,
     meetingLink: '',
   });
@@ -42,19 +45,20 @@ export function SessionCreateDialog({ onCreated }: Props) {
     return earliest;
   };
 
-  const toDatetimeLocal = (d: Date) => {
+  const toDateString = (d: Date) => {
     const pad = (n: number) => String(n).padStart(2, '0');
-    const year = d.getFullYear();
-    const month = pad(d.getMonth() + 1);
-    const day = pad(d.getDate());
-    const hours = pad(d.getHours());
-    const minutes = pad(d.getMinutes());
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   };
 
-  // min value for datetime-local input
+  const toTimeString = (d: Date) => {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  // min value for date input
   const earliestStart = computeEarliestStart();
-  const earliestStartString = toDatetimeLocal(earliestStart);
+  const minDateString = toDateString(earliestStart);
+  const minTimeString = toTimeString(earliestStart);
 
   useEffect(() => {
     if (!open || !user) return;
@@ -78,40 +82,44 @@ export function SessionCreateDialog({ onCreated }: Props) {
   }, [open, user]);
 
   const isValid =
-    typeof values.groupId === 'number' && values.title.trim().length > 0 && values.start.trim().length > 0 && Number(values.durationDays) >= 1;
+    typeof values.groupId === 'number' &&
+    values.title.trim().length > 0 &&
+    values.date.trim().length > 0 &&
+    values.startTime.trim().length > 0 &&
+    values.endTime.trim().length > 0 &&
+    Number(values.durationDays) >= 1;
 
   const handleSubmit = async () => {
-    if (!isValid || !user || !values.groupId) return;
+    if (!isValid || !user || !values.groupId || submitting) return;
+    setSubmitting(true);
     try {
+      if (!values.date || !values.startTime || !values.endTime) {
+        alert('Please provide date, start time, and end time.');
+        return;
+      }
+
       // Validate earliest allowed start
-      const chosen = values.start ? new Date(values.start) : null;
+      const chosenDateTime = new Date(`${values.date}T${values.startTime}`);
+      const endDateTime = new Date(`${values.date}T${values.endTime}`);
       const minAllowed = computeEarliestStart();
-      if (!chosen || chosen.getTime() < minAllowed.getTime()) {
+      
+      if (chosenDateTime.getTime() < minAllowed.getTime()) {
         alert('Start time must be at least 1 hour from now (rounded to the next 30-minute slot). Please choose a later time.');
         return;
       }
-      // Backend expects LocalDateTime-like strings; datetime-local produces e.g. 2024-11-07T14:00
-      const formatWithOffset = (localDatetime: string) => {
-        // localDatetime expected 'YYYY-MM-DDTHH:mm'
-        if (!localDatetime) return localDatetime;
-        // ensure seconds
-        const base = localDatetime.length === 16 ? `${localDatetime}:00` : localDatetime;
-        const offsetMinutes = -new Date().getTimezoneOffset(); // minutes east of UTC
-        const sign = offsetMinutes >= 0 ? '+' : '-';
-        const abs = Math.abs(offsetMinutes);
-        const hh = String(Math.floor(abs / 60)).padStart(2, '0');
-        const mm = String(abs % 60).padStart(2, '0');
-        return `${base}${sign}${hh}:${mm}`; // e.g. 2025-11-13T05:00:00-05:00
-      };
+
+      if (endDateTime <= chosenDateTime) {
+        alert('End time must be later than the start time.');
+        return;
+      }
 
       const payload = {
         groupId: values.groupId,
         title: values.title,
         description: values.description,
-        // send local datetime with explicit timezone offset to avoid server/client ambiguity
-        startTime: values.start ? formatWithOffset(values.start) : values.start,
-        // include local wall-clock form so server can choose to preserve local date/time if desired
-        startTimeLocal: values.start || null,
+        date: values.date, // YYYY-MM-DD
+        startTime: values.startTime, // HH:mm
+        endTime: values.endTime, // HH:mm
         durationDays: Number(values.durationDays) || 1,
         createdById: user.id,
         meetingLink: values.meetingLink || null,
@@ -121,18 +129,26 @@ export function SessionCreateDialog({ onCreated }: Props) {
       console.log('Session created', created);
       onCreated?.(created);
       setOpen(false);
-      setValues({ groupId: undefined, title: '', description: '', start: '', durationDays: 1, meetingLink: '' });
+      setValues({ groupId: undefined, title: '', description: '', date: '', startTime: '', endTime: '', durationDays: 1, meetingLink: '' });
     } catch (err: any) {
       console.error('Failed to create session', err);
       alert(err?.message || 'Failed to create session');
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  // When dialog opens, default start to earliest allowed slot if empty
+  // When dialog opens, default to earliest allowed slot if empty
   useEffect(() => {
     if (!open) return;
     const es = computeEarliestStart();
-    setValues((v) => ({ ...v, start: v.start || toDatetimeLocal(es) }));
+    const defaultEndTime = new Date(es.getTime() + 60 * 60 * 1000); // +1 hour from start
+    setValues((v) => {
+      const dateVal = v.date || toDateString(es);
+      const startVal = v.startTime || toTimeString(es);
+      const endVal = v.endTime || toTimeString(defaultEndTime);
+      return { ...v, date: dateVal, startTime: startVal, endTime: endVal };
+    });
   }, [open]);
 
   return (
@@ -187,17 +203,36 @@ export function SessionCreateDialog({ onCreated }: Props) {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Start</label>
+              <label className="text-sm font-medium">Date</label>
               <Input
-                type="datetime-local"
-                value={values.start}
-                onChange={(e) => setValues((v) => ({ ...v, start: e.target.value }))}
-                min={toDatetimeLocal(computeEarliestStart())}
+                type="date"
+                value={values.date}
+                onChange={(e) => setValues((v) => ({ ...v, date: e.target.value }))}
+                min={minDateString}
               />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Duration (days)</label>
               <Input type="number" min={1} value={String(values.durationDays)} onChange={(e) => setValues((v) => ({ ...v, durationDays: Number(e.target.value) }))} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Start Time</label>
+              <Input
+                type="time"
+                value={values.startTime}
+                onChange={(e) => setValues((v) => ({ ...v, startTime: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">End Time</label>
+              <Input
+                type="time"
+                value={values.endTime}
+                onChange={(e) => setValues((v) => ({ ...v, endTime: e.target.value }))}
+              />
             </div>
           </div>
 
@@ -208,10 +243,10 @@ export function SessionCreateDialog({ onCreated }: Props) {
         </div>
 
         <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-2 mt-4">
-          <Button variant="outline" onClick={() => setOpen(false)} className="w-full sm:w-auto">Cancel</Button>
-          <Button onClick={handleSubmit} disabled={!isValid} className="w-full sm:w-auto">
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={submitting} className="w-full sm:w-auto">Cancel</Button>
+          <Button onClick={handleSubmit} disabled={!isValid || submitting} className="w-full sm:w-auto">
             <Plus className="w-4 h-4 mr-2" />
-            Create Session
+            {submitting ? 'Creating...' : 'Create Session'}
           </Button>
         </DialogFooter>
       </DialogContent>

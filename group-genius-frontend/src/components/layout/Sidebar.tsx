@@ -47,6 +47,12 @@ interface StickyNote {
   rotation: number;
 }
 
+const parseSessionDate = (value?: string | null) => {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
 export function Sidebar() {
   const { user } = useAuth();
   const [nextSession, setNextSession] = useState<Session | null>(null);
@@ -54,6 +60,7 @@ export function Sidebar() {
   
   const [groups, setGroups] = useState<Group[]>([]);
   const [stickyNotes, setStickyNotes] = useState<StickyNote[]>([]);
+  const [noteAssignments, setNoteAssignments] = useState<Record<string, string>>({});
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState<string>('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -61,16 +68,19 @@ export function Sidebar() {
   const mapDtoToUi = useCallback((dto: SessionResponseDTO, groupName?: string): Session => {
     const start = dto.startTime || dto.start || null;
     const end = dto.endTime || dto.end || null;
-    const startDate = start ? new Date(start) : null;
+    const startDate = parseSessionDate(start);
+    const endDate = parseSessionDate(end);
     const date = startDate ? startDate.toISOString().split('T')[0] : (dto.date ?? '');
-    const time = startDate ? `${startDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}${end ? ' - ' + (new Date(end)).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''}` : '';
+    const time = startDate
+      ? `${startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}${endDate ? ' - ' + endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}`
+      : '';
     return {
       id: dto.id,
       title: dto.title,
       date,
       time,
-      startTime: start,
-      endTime: end,
+      startTime: startDate ? startDate.toISOString() : null,
+      endTime: endDate ? end : null,
       groupId: dto.groupId,
       groupName: groupName || 'Study Group'
     };
@@ -142,6 +152,32 @@ export function Sidebar() {
       };
       setStickyNotes([initialNote]);
     }
+    
+    // Load note assignments
+    const savedAssignments = localStorage.getItem(`stickyNoteAssignments_${user.id}`);
+    if (savedAssignments) {
+      try {
+        setNoteAssignments(JSON.parse(savedAssignments));
+      } catch (e) {
+        console.error('Failed to load note assignments', e);
+      }
+    }
+  }, [user]);
+
+  // Reload assignments periodically to sync with calendar
+  useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(() => {
+      const savedAssignments = localStorage.getItem(`stickyNoteAssignments_${user.id}`);
+      if (savedAssignments) {
+        try {
+          setNoteAssignments(JSON.parse(savedAssignments));
+        } catch (e) {
+          console.error('Failed to reload note assignments', e);
+        }
+      }
+    }, 1000); // Check every second for assignment changes
+    return () => clearInterval(interval);
   }, [user]);
 
   // Save sticky notes to localStorage
@@ -151,6 +187,10 @@ export function Sidebar() {
   }, [stickyNotes, user]);
 
   const addStickyNote = () => {
+    if (stickyNotes.length >= 6) {
+      alert('Maximum 6 sticky notes allowed');
+      return;
+    }
     const colors: StickyNote['color'][] = ['yellow', 'pink', 'blue', 'green'];
     const rotations = [-1, 0.5, -0.5, 1];
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
@@ -347,7 +387,7 @@ export function Sidebar() {
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
                 <StickyNote className="w-4 h-4" />
-                Sticky Notes
+                Sticky Notes ({stickyNotes.length}/6)
               </h3>
               <Button
                 variant="ghost"
@@ -355,12 +395,28 @@ export function Sidebar() {
                 className="h-7 w-7 p-0"
                 onClick={addStickyNote}
                 title="Add new note"
+                disabled={stickyNotes.length >= 6}
               >
                 <Plus className="w-4 h-4" />
               </Button>
             </div>
             
-            {stickyNotes.map((note) => {
+            {(() => {
+              // Filter out notes that are assigned to calendar dates
+              const assignedNoteIds = new Set(Object.keys(noteAssignments));
+              const unassignedNotes = stickyNotes.filter(note => !assignedNoteIds.has(note.id));
+              
+              if (unassignedNotes.length === 0) {
+                return (
+                  <div className="text-center py-8 text-muted-foreground text-xs">
+                    <StickyNote className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p>{stickyNotes.length === 0 ? 'No sticky notes yet' : 'All notes are on the calendar'}</p>
+                    <p className="mt-1">{stickyNotes.length === 0 ? 'Click + to create one' : 'Drag notes from calendar or create new ones'}</p>
+                  </div>
+                );
+              }
+              
+              return unassignedNotes.map((note) => {
               const colors = getNoteColors(note.color);
               const isEditing = editingNoteId === note.id;
               
@@ -474,7 +530,8 @@ export function Sidebar() {
                   )}
                 </div>
               );
-            })}
+            });
+            })()}
           </div>
 
           {/* Notifications feature removed */}

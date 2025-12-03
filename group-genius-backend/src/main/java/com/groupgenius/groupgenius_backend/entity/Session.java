@@ -2,7 +2,9 @@ package com.groupgenius.groupgenius_backend.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +32,13 @@ public class Session {
     private String description;
 
     @Column(nullable = false)
-    private LocalDateTime startTime;
+    private LocalDate sessionDate;
+
+    @Column(nullable = false)
+    private LocalTime startTime;
+
+    @Column(nullable = false)
+    private LocalTime endTime;
 
     @Column(nullable = false)
     private Integer durationDays;
@@ -38,9 +46,6 @@ public class Session {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
-
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
 
     @Column(length = 500)
     private String meetingLink;
@@ -57,11 +62,6 @@ public class Session {
     @Builder.Default
     private List<Notification> notifications = new ArrayList<>();
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-    }
-
     // Soft-archive flag: when true the session is hidden from regular queries but
     // preserved in DB
     @Column(nullable = false)
@@ -71,9 +71,17 @@ public class Session {
     @Column
     private LocalDateTime archivedAt;
 
-    public LocalDateTime getComputedEndTime() {
-        if (startTime == null || durationDays == null)
+    public LocalDateTime getComputedStartTime() {
+        if (sessionDate == null || startTime == null)
             return null;
-        return startTime.plusDays(durationDays.longValue());
+        return LocalDateTime.of(sessionDate, startTime);
+    }
+
+    public LocalDateTime getComputedEndTime() {
+        if (sessionDate == null || startTime == null || endTime == null || durationDays == null)
+            return null;
+        LocalDateTime firstDayEnd = LocalDateTime.of(sessionDate, endTime);
+        long extraDays = Math.max(0, durationDays.longValue() - 1);
+        return firstDayEnd.plusDays(extraDays);
     }
 }

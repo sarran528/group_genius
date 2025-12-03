@@ -41,7 +41,9 @@ export interface SessionCreateWithInvitationsRequest {
   groupId: number;
   title: string;
   description?: string;
-  startTime: string; // ISO format
+  date: string; // YYYY-MM-DD
+  startTime: string; // HH:mm
+  endTime: string; // HH:mm
   durationDays: number; // integer number of days (>=1)
   meetingLink?: string;
   invitedUserIds: number[];
@@ -219,5 +221,18 @@ export const sessionParticipantAPI = {
     });
     const data = await handleResponse(response);
     return data.isParticipant;
+  },
+
+  getParticipationStatus: async (userId: number, sessionIds: number[]): Promise<Record<number, boolean>> => {
+    const url = `${API_BASE_URL}/sessions/participants/user/${userId}/status`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...buildHeaders(),
+      },
+      body: JSON.stringify({ sessionIds }),
+    });
+    return handleResponse(response);
   },
 };
