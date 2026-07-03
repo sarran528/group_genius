@@ -31,6 +31,9 @@ public class SecurityConfig {
     @Value("${app.frontend.url:}")
     private String frontendUrl;
 
+    @Value("${app.dev.origins:}")
+    private String devOrigins;
+
     @Value("${app.allow.dev.origins:true}")
     private boolean allowDevOrigins;
 
@@ -74,9 +77,12 @@ public class SecurityConfig {
             allowedOrigins.add(frontendUrl);
         }
         if (allowDevOrigins) {
-            allowedOrigins.addAll(Arrays.asList(
-                    "http://localhost:5173",
-                    "http://localhost:8080"));
+            if (devOrigins != null && !devOrigins.isBlank()) {
+                Arrays.stream(devOrigins.split(","))
+                        .map(String::trim)
+                        .filter(origin -> !origin.isEmpty())
+                        .forEach(allowedOrigins::add);
+            }
         }
 
         configuration.setAllowedOriginPatterns(allowedOrigins);
